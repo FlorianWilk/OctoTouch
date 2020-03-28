@@ -4,6 +4,7 @@ from PyQt5.QtGui import *
 from ui.basic import *
 from ui.content_idle import *
 from ui.content_print import *
+from ui.utils import *
 
 class MyContent(QWidget):
 

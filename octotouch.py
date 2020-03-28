@@ -15,39 +15,17 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import asyncio
 import websocket
-import octotouch_ui
 
 from ui.buttons import *
 from ui.temppanel import *
 from ui.content import *
+import ui.utils
 
 ask = False
 host = "printerpi.local:5000"
-show_time_units = False
 
+style="default_style.css"
 
-def convertMillis(millis):
-    if millis is None:
-        return "unknown"
-    seconds = round(int((millis) % 60), 2)
-    minutes = round(int((millis/(60)) % 60), 2)
-    hours = round(int((millis/(60*60)) % 24), 2)
-    s = ""
-    u = None
-    if hours > 0:
-        s = s+'{:02d}:'.format(hours)
-        u = "h"
-    if minutes > 0:
-        s = '{}{:02d}:'.format(s, minutes)
-        if u is None:
-            u = "m"
-    if u is None:
-        u = "s"
-    s = '{}{:02d}'.format(s, seconds)
-    if show_time_units:
-        return s+u
-    else:
-        return s
 
 
 class PIUI(object):
@@ -64,6 +42,7 @@ class PIUI(object):
         self.client = None
         self.app = None
         self.data = {}
+        self.connected=False
 
         self.content_widget = None
         self.tempt_content = None
@@ -81,13 +60,13 @@ class PIUI(object):
             "bed_temps": "",
             "tool_temps": "",
             "est_print_time": "",
-            "filament_length": "",
+            "filament_length": None,
             "filament_volument": "",
             "filename": "",
             "progress_completion": "",
             "print_time": "",
             "print_time_left": "",
-            "temperatures": {"bed": 0, "tool": 0},
+            "temperatures": {"bed": [], "tool": []},
         }
 
         self.uri = "ws://{}/sockjs/websocket".format(host)
@@ -100,7 +79,15 @@ class PIUI(object):
         self.wst.start()
         self.build_ui()
 
-    
+    def setConnected(self,b):
+        self.connected=b
+        if b == True:
+            self.main_buttons.show()
+            self.temp_content.show()
+        else:
+            self.main_buttons.hide()
+            self.temp_content.hide()
+        #self.layout_main.update_ui()
 
     def on_message(self, msgstr):
         try:
@@ -109,32 +96,44 @@ class PIUI(object):
             if not "current" in msg:  # Hisotry / timelapse / event
                 return
             state = msg['current']['state']
+            #print("State is "+ str(state))
+
             self.data['state_flags'] = state['flags']
+            if state['flags']['operational']:
+                self.setConnected(True)
+            else:
+                self.setConnected(False)
+
             self.data['state_text'] = state['text']
-            d_temp = msg['current']['temps']
-            if len(d_temp) > 0:
-                d_temp = d_temp[0]
-                d_temp_bed = d_temp['bed']
-                self.data['bed_temps'] = d_temp_bed['actual'], d_temp_bed['target']
-                d_temp_tool = d_temp['tool0']
-                self.data['tool_temps'] = d_temp_tool['actual'], d_temp_tool['target']
-                self.data['temperatures'] = {
-                    'bed': self.data['bed_temps'], 'tool': self.data['tool_temps']}
+            current=msg["current"]
+            if "temps" in current:
+                d_temp = current['temps']
+                if len(d_temp) > 0:
+                    d_temp = d_temp[0]
+                    if "bed" in d_temp:
+                        d_temp_bed = d_temp['bed']
+                        self.data['bed_temps'] = d_temp_bed['actual'], d_temp_bed['target']
+                    if "tool0" in d_temp:
+                        d_temp_tool = d_temp['tool0']
+                        self.data['tool_temps'] = d_temp_tool['actual'], d_temp_tool['target']
+                    self.data['temperatures'] = {
+                        'bed': self.data['bed_temps'], 'tool': self.data['tool_temps']}
 
             # job infos
-            d_job = msg['current']['job']
-            self.data['est_print_time'] = d_job['estimatedPrintTime']
-            if d_job and d_job['filament'] and d_job['filament']['tool0']:
-                self.data['filament_length'] = d_job['filament']['tool0']['length']
-                self.data['filament_volume'] = d_job['filament']['tool0']['volume']
-            self.data['filename'] = d_job['file']['display']
+            if "job" in current:
+                d_job = current['job']
+                self.data['est_print_time'] = d_job['estimatedPrintTime']
+                if d_job and d_job['filament'] and d_job['filament']['tool0']:
+                    self.data['filament_length'] = d_job['filament']['tool0']['length']
+                    self.data['filament_volume'] = d_job['filament']['tool0']['volume']
+                self.data['filename'] = d_job['file']['display']
 
-            self.data['progress_completion'] = msg['current']['progress']['completion']
-            self.data['print_time'] = msg['current']['progress']['printTime']
-            self.data['print_time_left'] = msg['current']['progress']['printTimeLeft']
+                self.data['progress_completion'] = msg['current']['progress']['completion']
+                self.data['print_time'] = msg['current']['progress']['printTime']
+                self.data['print_time_left'] = msg['current']['progress']['printTimeLeft']
             # print(job_info)
             # print(printer)
-            print(self.data)
+            #print(self.data)
             self.update_ui()
         except Exception as ex:
 
@@ -149,11 +148,21 @@ class PIUI(object):
         print("Close")
 
     def init_client(self):
+        print("Initializing OctoREST client...")
         while True:
             try:
                 client = OctoRest(url="http://{}".format(self.octo_url), apikey=self.octo_key)
+                print("Initialized OctoREST client")
+                print(str(client.state()))
+                print(str(client.connection_info()))
+                #
+                if "Error" in client.state():
+                    print("Printer is not connected. Trying to connect...")
+                    print(client.connect())
+                client.connect()
                 return client
             except Exception as ex:
+                print("Initialized of OctoREST client failed. Retrying in 10secs...")
                 print(ex)
                 time.sleep(10)
 
@@ -196,7 +205,7 @@ class PIUI(object):
         self.app.setOverrideCursor(Qt.BlankCursor)
         app = self.app
         w = QWidget()
-        sshFile = "./style.css"
+        sshFile = "./styles/"+style
         with open(sshFile, "r") as fh:
             app.setStyleSheet(fh.read())
 
@@ -233,6 +242,7 @@ class PIUI(object):
         timer = QTimer()
         timer.timeout.connect(lambda: None)
         timer.start(100)
+        self.setConnected(False)
         sys.exit(self.app.exec_())
 
 

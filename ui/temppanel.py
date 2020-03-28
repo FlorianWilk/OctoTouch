@@ -26,7 +26,10 @@ class MyTemps(QWidget):
           layout.addWidget(self.bed_label,1)
 
      def setTemps(self,temps):
-          bed_actual,bed_target=(temps["bed"])
-          tool_actual,tool_target=(temps["tool"])
-          self.hotend_label.setText(str(tool_actual)+"°")
-          self.bed_label.setText(str(bed_actual)+"°")
+          print(str(len(temps["bed"]))+"+***")
+          if len(temps["bed"])==2:
+              bed_actual,bed_target=(temps["bed"])
+              self.bed_label.setText(str(bed_actual)+"°")
+          if len(temps["tool"])==2:
+            tool_actual,tool_target=(temps["tool"])
+            self.hotend_label.setText(str(tool_actual)+"°")

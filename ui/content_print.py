@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from ui.basic import *
+from ui.utils import *
+
 
 class MyPrintContent(QWidget):
     def __init__(self, *args, **kwargs):
@@ -30,11 +32,16 @@ class MyPrintContent(QWidget):
 
     def updateUI(self, data):
         # print(data)
-        timeleft = convertMillis(data['print_time_left'])+" left"
-        filamenttotal = str(int(data['filament_length']/1000))+" m Filament"
-        state = "Printing - " + convertMillis(data['print_time'])
-        completion = "{:.0f}% done".format(data["progress_completion"])
-        self.state.setText(state)
-        self.time_left.setText(timeleft)
-        self.filament_total.setText(filamenttotal)
-        self.completion.setText(completion)
+        if not data["print_time_left"] is None:
+            timeleft = convertMillis(data['print_time_left'])+" left"
+            self.time_left.setText(timeleft)
+        if not data["filament_length"] is None:
+            filamenttotal = str(
+                int(data['filament_length']/1000))+" m Filament"
+            self.filament_total.setText(filamenttotal)
+        if not data["print_time"] is None:
+            state = "Printing - " + convertMillis(data['print_time'])
+            self.state.setText(state)
+        if not data["progress_completion"] is None:
+            completion = "{:.0f}% done".format(data["progress_completion"])
+            self.completion.setText(completion)
