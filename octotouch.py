@@ -31,10 +31,26 @@ style="default_style.css"
 class PIUI(object):
 
     def act_stop(self):
-        pass
-    
+        self.client.cancel()
+
     def act_switch(self):
+        self.client.gcode("M109 S190\nG91\nG1 E-550 F4000\nM18 E")
+
+    def act_test(self):
         pass
+
+    def act_home(self):
+        self.client.home()
+
+    def act_present(self):
+        self.client.gcode("G90\nG1 Y220 F5000\n")
+
+
+    def act_update(self):
+        QApplication.exit(3)
+    
+    def act_mesh(self):
+        self.client.gcode("G28\nG29\n")
 
     def __init__(self):
         self.octo_url = host
@@ -51,7 +67,14 @@ class PIUI(object):
         self.client = self.init_client()
 
         self.menu_print=[{'STOP':{"func": self.act_stop}}]
-        self.menu_idle={'SWITCH':{"func": self.act_switch}}
+        self.menu_idle=[
+                        {"label":"home", "func": self.act_home},
+                        {"label":"present", "func": self.act_present},
+                        {'label':'change',"func": self.act_switch},
+                        {"label":'test',"func":self.act_test},
+                        {"label":'mesh',"func":self.act_mesh},
+                        {"label":'update',"func":self.act_update}
+                        ]
 
         # Our DataStructure
         self.data = {
@@ -159,7 +182,6 @@ class PIUI(object):
                 if "Error" in client.state():
                     print("Printer is not connected. Trying to connect...")
                     print(client.connect())
-                client.connect()
                 return client
             except Exception as ex:
                 print("Initialized of OctoREST client failed. Retrying in 10secs...")
@@ -168,11 +190,8 @@ class PIUI(object):
 
     def buttonclicked(self, i):
         try:
-            if i == 0:
-                QApplication.exit(3)
-                self.client.home()
-            elif i == 1:
-                self.client.cancel()
+     
+            
             if i == 2:
                 self.client.toggle()
             if i == 3:
@@ -224,6 +243,7 @@ class PIUI(object):
         layout_content.setContentsMargins(0, 0, 0, 0)
 
         buttons = MyMainButtons()
+        buttons.setMenu(self.menu_idle)
         buttons.clicked.connect(self.buttonclicked)
         self.main_buttons = buttons
         layout_main.addLayout(layout_content)
