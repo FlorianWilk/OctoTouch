@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "test.py", line 509, in <module>
+    piui=PIUI()
+  File "test.py", line 293, in __init__
+    self.ws.send("connect()")
+  File "/home/florian/.local/lib/python3.6/site-packages/websocket/_app.py", line 154, in send
+    if not self.sock or self.sock.send(data, opcode) == 0:
+  File "/home/florian/.local/lib/python3.6/site-packages/websocket/_core.py", line 253, in send
+    return self.send_frame(frame)
+  File "/home/florian/.local/lib/python3.6/site-packages/websocket/_core.py", line 279, in send_frame
+    l = self._send(data)
+  File "/home/florian/.local/lib/python3.6/site-packages/websocket/_core.py", line 449, in _send
+    return send(self.sock, data)
+  File "/home/florian/.local/lib/python3.6/site-packages/websocket/_socket.py", line 135, in send
+    raise WebSocketConnectionClosedException("socket is already closed.")
+websocket._exceptions.WebSocketConnectionClosedException: socket is already closed.
