@@ -22,7 +22,7 @@ from ui.temppanel import *
 from ui.content import *
 
 ask = False
-host = "http://printerpi.local:5000"
+host = "printerpi.local:5000"
 show_time_units = False
 
 
@@ -45,11 +45,18 @@ def convertMillis(millis):
         u = "s"
     s = '{}{:02d}'.format(s, seconds)
     if show_time_units:
-     return s+u
-    else: 
-     return s
+        return s+u
+    else:
+        return s
+
 
 class PIUI(object):
+
+    def act_stop(self):
+        pass
+    
+    def act_switch(self):
+        pass
 
     def __init__(self):
         self.octo_url = host
@@ -64,6 +71,10 @@ class PIUI(object):
         self.layout_main = None
         self.client = self.init_client()
 
+        self.menu_print=[{'STOP':{"func": self.act_stop}}]
+        self.menu_idle={'SWITCH':{"func": self.act_switch}}
+
+        # Our DataStructure
         self.data = {
             "state_flags": {},
             "state_text": "",
@@ -76,11 +87,10 @@ class PIUI(object):
             "progress_completion": "",
             "print_time": "",
             "print_time_left": "",
-
             "temperatures": {"bed": 0, "tool": 0},
         }
 
-        self.uri = "ws://printerpi.local:5000/sockjs/websocket"
+        self.uri = "ws://{}/sockjs/websocket".format(host)
         self.ws = websocket.WebSocketApp(self.uri,
                                          on_message=self.on_message,
                                          on_error=self.on_error,
@@ -89,6 +99,8 @@ class PIUI(object):
         self.wst.daemon = True
         self.wst.start()
         self.build_ui()
+
+    
 
     def on_message(self, msgstr):
         try:
@@ -139,7 +151,7 @@ class PIUI(object):
     def init_client(self):
         while True:
             try:
-                client = OctoRest(url=self.octo_url, apikey=self.octo_key)
+                client = OctoRest(url="http://{}".format(self.octo_url), apikey=self.octo_key)
                 return client
             except Exception as ex:
                 print(ex)
@@ -217,11 +229,12 @@ class PIUI(object):
 
         w.setLayout(layout_main)
         w.show()
-
+        # We need to give Control back to Python to make CTRL-C work
         timer = QTimer()
         timer.timeout.connect(lambda: None)
         timer.start(100)
-        sys.exit(app.exec_())
+        sys.exit(self.app.exec_())
+
 
     def update_ui(self):
         data = self.data
@@ -229,14 +242,8 @@ class PIUI(object):
         self.main_buttons.setStates(data["state_flags"])
         self.main_content.setData(data)
 
-
 def sigint_handler(*args):
-    sys.stderr.write('\r')
-    if ask and QMessageBox.question(None, '', "Are you sure you want to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes:
         QApplication.quit()
-    else:
-        QApplication.quit()
-
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sigint_handler)
