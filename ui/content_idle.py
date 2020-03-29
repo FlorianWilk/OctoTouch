@@ -47,7 +47,7 @@ class MyIdleContent(QWidget):
         self.idle_label.setObjectName("state")
         layout.addWidget(self.idle_label)
 
-        self.mesh_widget=glWidget(self)
+        #self.mesh_widget=glWidget(self)
 #        layout.addWidget(self.mesh_widget)
 
         self.state = MyBigLabel("")
