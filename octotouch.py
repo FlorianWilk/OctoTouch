@@ -23,10 +23,7 @@ import ui.utils
 
 ask = False
 host = "printerpi.local:5000"
-
 style="default_style.css"
-
-
 
 class PIUI(object):
 
@@ -35,6 +32,7 @@ class PIUI(object):
 
     def act_switch(self):
         self.client.gcode("M109 S190\nG91\nG1 E-550 F4000\nM18 E")
+        # self.client.gcode("G1 E550 F2000\nM104 S0\nG90\nM18")
 
     def act_test(self):
         pass
@@ -43,7 +41,7 @@ class PIUI(object):
         self.client.home()
 
     def act_present(self):
-        self.client.gcode("G90\nG1 Y220 F5000\n")
+        self.client.gcode("G90\nG1 X0 Z50\nG1 Y220 F5000\n")
 
 
     def act_update(self):
@@ -65,7 +63,8 @@ class PIUI(object):
         self.main_buttons = None
         self.layout_main = None
         self.client = self.init_client()
-
+        self.logs = []
+        self.mesh=[]
         self.menu_print=[{'STOP':{"func": self.act_stop}}]
         self.menu_idle=[
                         {"label":"home", "func": self.act_home},
@@ -110,17 +109,43 @@ class PIUI(object):
         else:
             self.main_buttons.hide()
             self.temp_content.hide()
-        #self.layout_main.update_ui()
+
+    def addlog(self,log):
+        self.logs+=log
+        self.logs=self.logs[-10:]
+        self.handle_logs()
+
+    # Will take care of handling events for log-entries. currently only meshing needs it, so its pretty simple
+    def handle_logs(self):
+        t="Recv: Bilinear Leveling Grid:"
+        if t in self.logs:
+            i=self.logs.index(t)
+            if i>0 and i< len(self.logs)-5:
+                level=self.logs[i+2:i+5]
+                self.mesh=[item for sublist in level for item in sublist.split(" ")[3:]]
+                self.logs=self.logs[i+5:]
+                self.handle_mesh(self.mesh)
+
+    def handle_mesh(self,mesh):
+        # Needs logic
+        print(mesh)
 
     def on_message(self, msgstr):
         try:
             msg = json.loads(msgstr)
-            print("-Message " + str(msg))
-            if not "current" in msg:  # Hisotry / timelapse / event
-                return
-            state = msg['current']['state']
-            #print("State is "+ str(state))
+            if "current" in msg:  # Hisotry / timelapse / event
+                self.on_message_current(msg["current"])
+                self.update_ui()
+        except Exception as ex:
+            traceback.print_exc()
+            print(ex)
+            print(str(ex)+str(sys.exc_info()[-1].tb_lineno))
 
+    def on_message_current(self,cmsg):
+            state = cmsg['state']
+            #print("State is "+ str(state))
+            if "logs" in cmsg:
+                self.addlog(cmsg["logs"])
             self.data['state_flags'] = state['flags']
             if state['flags']['operational']:
                 self.setConnected(True)
@@ -128,7 +153,7 @@ class PIUI(object):
                 self.setConnected(False)
 
             self.data['state_text'] = state['text']
-            current=msg["current"]
+            current=cmsg
             if "temps" in current:
                 d_temp = current['temps']
                 if len(d_temp) > 0:
@@ -151,18 +176,10 @@ class PIUI(object):
                     self.data['filament_volume'] = d_job['filament']['tool0']['volume']
                 self.data['filename'] = d_job['file']['display']
 
-                self.data['progress_completion'] = msg['current']['progress']['completion']
-                self.data['print_time'] = msg['current']['progress']['printTime']
-                self.data['print_time_left'] = msg['current']['progress']['printTimeLeft']
-            # print(job_info)
-            # print(printer)
-            #print(self.data)
-            self.update_ui()
-        except Exception as ex:
+                self.data['progress_completion'] = cmsg['progress']['completion']
+                self.data['print_time'] = cmsg['progress']['printTime']
+                self.data['print_time_left'] = cmsg['progress']['printTimeLeft']
 
-            traceback.print_exc()
-            print(ex)
-            print(str(ex)+str(sys.exc_info()[-1].tb_lineno))
 
     def on_error(self, err):
         print("Error " + err)
@@ -188,36 +205,7 @@ class PIUI(object):
                 print(ex)
                 time.sleep(10)
 
-    def buttonclicked(self, i):
-        try:
-     
-            
-            if i == 2:
-                self.client.toggle()
-            if i == 3:
-                self.client.gcode("M109 S190\nG91\nG1 E-550 F4000\nM18 E")
-                input("Press Enter to continue...")
-                self.client.gcode("G1 E550 F2000\nM104 S0\nG90\nM18")
 
-
-# Changer filament GCode
-# M109 S190
-# G91
-# G1 E-550 F4000
-# M18 E
-# Keypress
-# G1 E550 F2000
-# M104 S0
-# G90
-# M84
-
-            if i == 4:
-                self.client.gcode("G28")
-                print(self.client.gcode("G29"))
-            else:
-                print("Not implemented yet")
-        except Exception as ex:
-            print("Error" + str(ex))
 
     def build_ui(self):
         self.app = QApplication(sys.argv)
@@ -244,7 +232,6 @@ class PIUI(object):
 
         buttons = MyMainButtons()
         buttons.setMenu(self.menu_idle)
-        buttons.clicked.connect(self.buttonclicked)
         self.main_buttons = buttons
         layout_main.addLayout(layout_content)
         layout_main.addWidget(buttons)
