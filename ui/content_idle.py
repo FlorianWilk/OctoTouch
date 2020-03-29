@@ -29,10 +29,6 @@ class glWidget(QOpenGLWidget):
         glFlush()
 
     def initializeGL(self):
-        glClearDepth(1.0)              
-        glDepthFunc(GL_LESS)
-        glEnable(GL_DEPTH_TEST)
-        glShadeModel(GL_SMOOTH)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()                    
         gluPerspective(45.0,1.33,0.1, 100.0) 
