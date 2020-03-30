@@ -12,7 +12,7 @@ class MyTemps(QWidget):
           layout=QHBoxLayout()
           layout.setSpacing(0)
           layout.setContentsMargins(0,0,0,0)          
-          self.setMaximumHeight(150)
+          self.setMaximumHeight(120)
           self.setLayout(layout)
           self.hotend_label=QLabel("0°")
           self.hotend_label.setObjectName("hotend_temp")
