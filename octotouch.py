@@ -242,8 +242,7 @@ class PIUI(object):
         temp_content = MyTemps()
         self.temp_content = temp_content
         self.main_content = main_content
-        self.main_content.setMesh(['+1.143', '+1.242', '+1.250', '+1.178', '+1.268', '+1.230', '+1.155', '+1.270', '+1.230'])
-        layout_content.addWidget(main_content)
+        layout_content.addWidget(self.main_content)
         layout_content.addWidget(temp_content)
 
         w.setLayout(layout_main)

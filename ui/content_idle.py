@@ -17,7 +17,10 @@ class MyMesh(QWidget):
     def paintEvent( self, QPaintEvent):
         qp = QPainter()
         qp.begin(self)
-        self.drawPoints(qp)
+        try:
+            self.drawPoints(qp)
+        except Exception as ex:
+            print(ex)
         qp.end()
     
     def getXY(self,x,y,z):
@@ -27,6 +30,7 @@ class MyMesh(QWidget):
         self.points=[float(p) for p in points]
         av=sum(self.points) / len(self.points) 
         self.points=[av-p for p in self.points]
+        self.update()
 
     def drawPoints(self, qp):
         if not len(self.points) == 9:
