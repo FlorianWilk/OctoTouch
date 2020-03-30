@@ -43,8 +43,8 @@ class MyMesh(QWidget):
                 
                 ps.append(self.getXY(xx,yy,zs[i]))
                         
-                x,y=self.getXY(xx,yy,-2)
-                qp.drawText(x,y, "{:.2f}".format(zs[i]))  
+                x,y=self.getXY(xx,yy,0)
+                qp.drawText(x,y+20, "{:.2f}".format(zs[i]))  
                 i+=1
         ll=["LF","RF","LB","RB"]
         xl=len(xs)
