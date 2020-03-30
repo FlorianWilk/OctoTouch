@@ -100,12 +100,15 @@ class MyIdleContent(QWidget):
         self.state = MyBigLabel("")
         self.state.setObjectName("last_print")
         self.state.setWordWrap(True)
+        self.state.hide()
         layout.addWidget(self.state)
 
         self.time_total = MyBigLabel("")
+        self.time_total.hide()
         layout.addWidget(self.time_total)
 
         self.filament_total = MyBigLabel("")
+        self.filament_total.hide();
         layout.addWidget(self.filament_total)
         layout.addStretch(1)
 
