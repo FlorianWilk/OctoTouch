@@ -10,7 +10,7 @@ class MyMesh(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 #        self.setMaximumSize(200,200)
-        self.setMinimumHeight(150)
+        self.setMinimumHeight(165)
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding))
         self.points=[]
 
