@@ -129,6 +129,7 @@ class PIUI(object):
     def handle_mesh(self,mesh):
         # Needs logic
         print(mesh)
+        self.main_content.setMesh(mesh)
 
     def on_message(self, msgstr):
         try:
@@ -193,10 +194,11 @@ class PIUI(object):
             try:
                 client = OctoRest(url="http://{}".format(self.octo_url), apikey=self.octo_key)
                 print("Initialized OctoREST client")
-                print(str(client.state()))
+                state=client.state()
+                print(str(state))
                 print(str(client.connection_info()))
                 #
-                if "Error" in client.state():
+                if "Error" in state or "Closed" in state :
                     print("Printer is not connected. Trying to connect...")
                     print(client.connect())
                 return client
@@ -240,6 +242,7 @@ class PIUI(object):
         temp_content = MyTemps()
         self.temp_content = temp_content
         self.main_content = main_content
+        #self.main_content.setMesh(['+1.143', '+1.242', '+1.250', '+1.178', '+1.268', '+1.230', '+1.155', '+1.270', '+1.230'])
         layout_content.addWidget(main_content)
         layout_content.addWidget(temp_content)
 

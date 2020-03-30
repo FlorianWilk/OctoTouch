@@ -44,3 +44,6 @@ class MyContent(QWidget):
     def setData(self, data):
         self.data = data
         self.updateUI(self.data)
+
+    def setMesh(self,mesh):
+        self.idle_content.setMesh(mesh)

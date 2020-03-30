@@ -3,36 +3,83 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from ui.basic import *
 from ui.utils import *
+import sys, random
 
-from OpenGL.GL import *
-from OpenGL.GLU import *
+class MyMesh(QWidget):
 
-class glWidget(QOpenGLWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setMinimumSize(100, 200)
+#        self.setMaximumSize(200,200)
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding))
+        self.points=[]
 
-    def __init__(self, parent):
-        QOpenGLWidget.__init__(self, parent)
-        #super(glWidget, self).__init__(parent)
-        self.setMinimumSize(100, 100)
-        self.setMaximumSize(200,200)
+    def paintEvent( self, QPaintEvent):
+        qp = QPainter()
+        qp.begin(self)
+        self.drawPoints(qp)
+        qp.end()
+    
+    def getXY(self,x,y,z):
+        return (y/2.0+x/2)*2+self.width()/2, (-y/2+x/2-z*20.0)/2+self.height()/2
 
-    def paintGL(self):
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glLoadIdentity()
-        glTranslatef(-2.5, 0.5, -6.0)
-        glColor3f( 1.0, 1.5, 0.0 )
-        glPolygonMode(GL_FRONT, GL_FILL)
-        glBegin(GL_TRIANGLES)
-        glVertex3f(2.0,-1.2,0.0)
-        glVertex3f(2.6,0.0,0.0)
-        glVertex3f(2.9,-1.2,0.0)
-        glEnd()
-        glFlush()
+    def setPoints(self,points):
+        self.points=[float(p) for p in points]
+        av=sum(self.points) / len(self.points) 
+        self.points=[av-p for p in self.points]
 
-    def initializeGL(self):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()                    
-        gluPerspective(45.0,1.33,0.1, 100.0) 
-        glMatrixMode(GL_MODELVIEW)
+    def drawPoints(self, qp):
+        if not len(self.points) == 9:
+            return
+        xs=[-110,0,110]
+        ys=[-110,0,110]
+        zs=self.points
+        ps=[]
+        i=0
+        qp.setPen(QColor(255,255,255))
+        qp.setFont(QFont('Arial', 10))
+        for yy in ys:
+            for xx in xs:
+                
+                ps.append(self.getXY(xx,yy,zs[i]))
+                        
+                x,y=self.getXY(xx,yy,-2)
+                qp.drawText(x,y, "{:.2f}".format(zs[i]))  
+                i+=1
+        ll=["LF","RF","LB","RB"]
+        xl=len(xs)
+        yl=len(ys)
+        qp.setPen(QColor(255,255,255))
+        qp.setFont(QFont('Arial', 12,weight=QFont.Bold))        
+        lxs=[(xs[0],ys[0]),(xs[xl-1],ys[0]),(xs[0],ys[yl-1]),(xs[xl-1],ys[yl-1])]
+        pen = QPen(QColor(27,92,193), 2, Qt.SolidLine)
+        i=0
+        for p in lxs:
+            xx,yy=p
+            x,y=self.getXY(xx,yy,0)
+            qp.drawText(x-10,y-10,ll[i])
+            i+=1
+        qp.setPen(pen)
+        # x lines
+
+        for o in range(yl):
+            for i in range(xl-1):
+                x1,y1=ps[i+o*xl]
+                x2,y2=ps[i+1+o*xl]
+                qp.drawLine(x1,y1,x2,y2)
+        # y lines
+        pen.setStyle(Qt.DashLine)
+        for o in range(xl):
+            for i in range(yl-1):
+                x1,y1=ps[i*xl+o]
+                x2,y2=ps[(i+1)*xl+o]
+                qp.drawLine(x1,y1,x2,y2)
+
+
+
+        pen.setStyle(Qt.DotLine)
+        pen.setStyle(Qt.DashDotDotLine)
+        pen.setStyle(Qt.CustomDashLine)
 
 class MyIdleContent(QWidget):
     def __init__(self, *args, **kwargs):
@@ -47,8 +94,8 @@ class MyIdleContent(QWidget):
         self.idle_label.setObjectName("state")
         layout.addWidget(self.idle_label)
 
-        #self.mesh_widget=glWidget(self)
-#        layout.addWidget(self.mesh_widget)
+        self.mesh_widget=MyMesh(self)
+        layout.addWidget(self.mesh_widget)
 
         self.state = MyBigLabel("")
         self.state.setObjectName("last_print")
@@ -61,6 +108,9 @@ class MyIdleContent(QWidget):
         self.filament_total = MyBigLabel("")
         layout.addWidget(self.filament_total)
         layout.addStretch(1)
+
+    def setMesh(self,mesh):
+        self.mesh_widget.setPoints(mesh)
 
     def updateUI(self, data):
 
