@@ -244,7 +244,12 @@ class PIUI(object):
         self.main_content = main_content
         layout_content.addWidget(self.main_content)
         layout_content.addWidget(temp_content)
-
+        #
+        #self.main_content.setMesh(['+1.032', '+1.190', '+1.238', '+1.107', '+1.238', '+1.220', '+1.107', '+1.255', '+1.245'])
+        #self.main_content.setMesh(['+1.113', '+1.225', '+1.242', '+1.175', '+1.258', '+1.220', '+1.155', '+1.262', '+1.232'])
+        #self.main_content.setMesh(['+1.170', '+1.260', '+1.248', '+1.198', '+1.280', '+1.218', '+1.162', '+1.275', '+1.230'])
+        #self.main_content.setMesh(['+1.178', '+1.260', '+1.248', '+1.215', '+1.280', '+1.220', '+1.172', '+1.272', '+1.225'])
+        #
         w.setLayout(layout_main)
         w.show()
         # We need to give Control back to Python to make CTRL-C work

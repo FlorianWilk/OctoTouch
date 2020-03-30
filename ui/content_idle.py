@@ -13,6 +13,7 @@ class MyMesh(QWidget):
         self.setMinimumHeight(165)
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding))
         self.points=[]
+        self.oldpoints=[]
 
     def paintEvent( self, QPaintEvent):
         qp = QPainter()
@@ -27,6 +28,7 @@ class MyMesh(QWidget):
         return (y/2.0+x/2)*2+self.width()/2, (-y/2+x/2-z*20.0)/2+self.height()/2
 
     def setPoints(self,points):
+        self.oldpoints=self.points
         self.points=[float(p) for p in points]
         av=sum(self.points) / len(self.points) 
         self.points=[av-p for p in self.points]
@@ -46,9 +48,6 @@ class MyMesh(QWidget):
             for xx in xs:
                 
                 ps.append(self.getXY(xx,yy,zs[i]))
-                        
-                x,y=self.getXY(xx,yy,0)
-                qp.drawText(x,y+20, "{:.2f}".format(zs[i]))  
                 i+=1
         ll=["LF","RF","LB","RB"]
         xl=len(xs)
@@ -78,8 +77,18 @@ class MyMesh(QWidget):
                 x1,y1=ps[i*xl+o]
                 x2,y2=ps[(i+1)*xl+o]
                 qp.drawLine(x1,y1,x2,y2)
-
-
+    
+        qp.setPen(QColor(255,255,255))
+        qp.setFont(QFont('Arial', 11))     
+        i=0
+        for yy in ys:
+            for xx in xs:
+                x,y=self.getXY(xx,yy,0)
+                qp.drawText(x,y+15, "{:+.2f}".format(zs[i]))  
+                if len(self.oldpoints)>0:
+                    qp.setFont(QFont('Arial', 10))     
+                    qp.drawText(x,y+25, "{:+.2f}".format(self.oldpoints[i]-zs[i]))  
+                i+=1
 
         pen.setStyle(Qt.DotLine)
         pen.setStyle(Qt.DashDotDotLine)
